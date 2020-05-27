@@ -17,48 +17,82 @@
         <link rel="icon" type="image/svg" href="assets/nb-logo-white.svg">
         <title>MMS ID oppslag</title>
     </head>
-    <body>
+    <body style="height: 100vh;">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="navbar-header">
                 <ul class="navbar-nav mr-auto">
-                <a class="navbar-brand" href="#">
-                    <img style="height: 35px;" alt="Ikon" src="assets/nb-logo-red.svg">
-                </a>
-                <h3>Oppslag av MMS ID</h3>
+                    <a class="navbar-brand" href="#">
+                        <img style="height: 35px;" alt="Ikon" src="assets/nb-logo-red.svg">
+                    </a>
+                    <h3>Oppslag av MMS ID</h3>
                 </ul>
             </div>
         </nav>
 
         <!-- input fields -->
         <div class="container">
-            <div class="form-group form-style">
-                <label for="objectIdForm">Objektnummer</label>
-                <input type="number" class="form-control-lg" id="objectIdForm" placeholder="Skriv inn objektnummer">
-                <small id="objectIdFormHelp" class="form-text text-muted">Skal være et nummer</small>
-            </div>
+            <form>
+                <div class="form-group form-style">
+                    <label for="objectIdForm">Objektnummer</label>
+                    <div class="row">
+                        <input type="number" class="form-control-lg" id="objectIdForm" placeholder="Skriv inn objektnummer">
+                        <button id="objectSearchBtn" class="btn btn-primary">
+                            Søk 
+                            <!-- inline search icon -->
+                            <svg class="bi bi-search" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10.442 10.442a1 1 0 0 1 1.415 0l3.85 3.85a1 1 0 0 1-1.414 1.415l-3.85-3.85a1 1 0 0 1 0-1.415z"/>
+                                <path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/>
+                            </svg>
+                        </button>
+                        <div id="objectSearchSpinner" class="spinner-border text-danger" role="status" hidden="hidden">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                    <small id="objectIdFormHelp" class="form-text text-muted">0/17</small>
+                </div>
+            </form>
+          
         </div>
+
 
         <!-- display fields -->
-        <div class="container">
-            <form>
-                <div class="form-group form-style">
-                    <label for="mmsId">MMS ID</label>
-                    <input type="number" class="form-control" id="mmsId">
-                    <small id="mmsIdHelp" class="form-text text-muted">Intern ID</small>
-                </div>
-                <!-- TODO: changed date -->
-                <div class="form-group form-style">
-                    <label for="currentTitle">Tittel</label>
-                    <textarea class="form-control" id="currentTitle"></textarea>
-                </div>
-
-                <div class="form-group form-style">
-                    <label for="previousTitles">Tidligere titler</label>
-                    <textarea class="form-control" id="previousTitles"></textarea>
-                </div>
-            <form>
+        <div class="jumbotron">
+            <p class="lead">Her vil du se resultat etter søk</p>
+            <hr class="my-4">
+            <div class="container">
+                <form>
+                    <div class="form-group form-style">
+                        <label for="mmsId">MMS ID</label>
+                        <input type="number" class="form-control" id="mmsId" disabled="disabled">
+                        <small id="mmsIdHelp" class="form-text text-muted">Intern ID</small>
+                    </div>
+                    <!-- TODO: changed date -->
+                    <div class="form-group form-style">
+                        <label for="currentTitle">Tittel</label>
+                        <textarea class="form-control" id="currentTitle" disabled="disabled"></textarea>
+                    </div>
+    
+                    <div class="form-group form-style">
+                        <label for="previousTitles">Tidligere titler</label>
+                        <textarea class="form-control" id="previousTitles" disabled="disabled"></textarea>
+                    </div>
+                <form>
+            </div>
         </div>
       
-        <footer>For evt hjelp kontakt 1313</footer>
+        <footer class="card-footer text-muted">
+            <div class="row">
+                <div class="col-sm">
+                    <p>For evt hjelp kontakt 1313</p>
+                    
+                </div>
+                <div class="col-sm">
+                    <p>For å rapportere feil <a href="https://github.com/Avokadoen/periodical_mms/issues" target="_blank">trykk her</a> og trykk på "New issue"</p>
+                </div>
+                <div class="col-sm">
+                    <p>Tekst lorem ipsum</p>
+                </div>
+            </div>
+        </footer>
     </body>
 </html> 
