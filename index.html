@@ -14,20 +14,51 @@
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
         <link rel="stylesheet" type="text/css" href="periodical_mms.css">
 
+        <link rel="icon" type="image/svg" href="assets/nb-logo-white.svg">
         <title>MMS ID oppslag</title>
     </head>
     <body>
-        <div class="container header-text top-padded">
-            <h1>Oppslag av MMS ID</h1>
-        </div>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="navbar-header">
+                <ul class="navbar-nav mr-auto">
+                <a class="navbar-brand" href="#">
+                    <img style="height: 35px;" alt="Ikon" src="assets/nb-logo-red.svg">
+                </a>
+                <h3>Oppslag av MMS ID</h3>
+                </ul>
+            </div>
+        </nav>
 
+        <!-- input fields -->
         <div class="container">
             <div class="form-group form-style">
-                <label for="objectIdForm">Skriv inn objektnummer</label>
-                <input type="number" class="form-control" id="objectIdForm">
+                <label for="objectIdForm">Objektnummer</label>
+                <input type="number" class="form-control-lg" id="objectIdForm" placeholder="Skriv inn objektnummer">
                 <small id="objectIdFormHelp" class="form-text text-muted">Skal være et nummer</small>
             </div>
         </div>
-        
+
+        <!-- display fields -->
+        <div class="container">
+            <form>
+                <div class="form-group form-style">
+                    <label for="mmsId">MMS ID</label>
+                    <input type="number" class="form-control" id="mmsId">
+                    <small id="mmsIdHelp" class="form-text text-muted">Intern ID</small>
+                </div>
+                <!-- TODO: changed date -->
+                <div class="form-group form-style">
+                    <label for="currentTitle">Tittel</label>
+                    <textarea class="form-control" id="currentTitle"></textarea>
+                </div>
+
+                <div class="form-group form-style">
+                    <label for="previousTitles">Tidligere titler</label>
+                    <textarea class="form-control" id="previousTitles"></textarea>
+                </div>
+            <form>
+        </div>
+      
+        <footer>For evt hjelp kontakt 1313</footer>
     </body>
 </html> 
