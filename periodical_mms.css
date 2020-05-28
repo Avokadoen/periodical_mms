@@ -16,6 +16,10 @@
     margin: 0 10px 0 0;
 }
 
+.search-btn-container {
+    margin: 0;
+}
+
 /* override some bootstrap classes */
 .jumbotron {
     margin-bottom: 0 !important;
