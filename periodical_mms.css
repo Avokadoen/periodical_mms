@@ -10,12 +10,17 @@
     max-width: 500px;
 }
 
+.navbar-brand {
+    height: 40px;
+    padding: 0 0 0 0;
+    margin: 0 10px 0 0;
+}
+
 /* override some bootstrap classes */
 .jumbotron {
     margin-bottom: 0 !important;
 }
-
-.footer {
+#footer {
     flex-grow: 1 !important;
 }
 
