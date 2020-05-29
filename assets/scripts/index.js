@@ -16,6 +16,7 @@ function main() {
         display_elements: {
             mmsId: document.getElementById("mmsId"),
             currentTitle: document.getElementById("currentTitle"),
+            subTitle: document.getElementById("subTitle"),
             previousTitles: document.getElementById("previousTitles"),
         },
 
@@ -105,6 +106,7 @@ function fetchAndHandleRequest(req, state) {
     req.send();
 }
 
+// TODO: only retrieve field and insert into json
 function injectRelevantFields(text, display_elements) {
     const parser = new DOMParser();
     console.log(text)
@@ -127,13 +129,16 @@ function injectRelevantFields(text, display_elements) {
                 return field;
             }
         }
+
+        return "";
     }
 
+    const datafields = xmlDoc.getElementsByTagName('datafield');
+    
+    // Retrieve mms id and insert to html
     {
         const target_institute = '47BIBSYS_NB';
-
-        const control_fields = xmlDoc.getElementsByTagName('datafield');
-        const elements = findElementsByAttribute(control_fields, "tag", "852");
+        const elements = findElementsByAttribute(datafields, "tag", "852");
         for (let element of elements) {
             const sub_fields = element.getElementsByTagName('subfield');
             const institute = findElementByAttribute(sub_fields, "code", "a");
@@ -141,14 +146,34 @@ function injectRelevantFields(text, display_elements) {
             if (institute.textContent.includes(target_institute)) {
                 const mmsIdElement = findElementByAttribute(sub_fields, "code", "6");
                 // TODO: emit error event if element is null
-                display_elements.mmsId.value = mmsIdElement !== null ? mmsIdElement.textContent : "";
+                display_elements.mmsId.value = mmsIdElement.innerHTML;
             }
         }
-        
     }
 
-    
+    // Retrieve current sub- and title
+    {
+        const element = findElementByAttribute(datafields, "tag", "245");
+        const sub_fields = element.getElementsByTagName('subfield');
 
+        const title = findElementByAttribute(sub_fields, "code", "a");
+        display_elements.currentTitle.value = title.innerHTML ? title.innerHTML : "";
+
+        const sub_title = findElementByAttribute(sub_fields, "code", "b");
+        display_elements.subTitle.value = sub_title.innerHTML ? sub_title.innerHTML : "";
+    }
+
+    // Previous title
+    {
+        // const element = findElementByAttribute(datafields, "tag", "780");
+        // const sub_fields = element.getElementsByTagName('subfield');
+
+        // const pre_title = findElementByAttribute(sub_fields, "code", "a");
+        // display_elements.previousTitles.value = title.innerHTML;
+
+        // const year = findElementByAttribute(sub_fields, "code", "g");
+        // display_elements.subTitle.value = sub_title.innerHTML;
+    }
 }
 
 function initRequest(id) {
@@ -162,11 +187,12 @@ function initRequest(id) {
 
 
 function createUrl(id) {
-    const target_host_name = "bibsys.alma.exlibrisgroup.com";
     // Because Alma SRU is a creation from hell, they don't support Origin -> Acccess-Control-Allow-Origin
     // responses, and so the browser refuse to load fetched content.
     // as a **sinful** hack we send our SRU to a herokuapp that serves as our backend.
-    const cors_anywhere_url = "https://cors-anywhere.herokuapp.com/" 
+    const cors_anywhere_url = "https://cors-anywhere.herokuapp.com/";
+
+    const target_host_name = "bibsys.alma.exlibrisgroup.com";
     const sru_url = cors_anywhere_url + "https://" + target_host_name
                   + "/view/sru/47BIBSYS_NETWORK?version=1.2&operation=searchRetrieve&recordSchema=marcxml"
                   + "&maximumRecords=1&query=alma.granular_resource_type=p AND alma.all_for_ui="
