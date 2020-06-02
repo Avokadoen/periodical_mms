@@ -149,20 +149,23 @@ function copyToClipboard(button, state) {
 /// Initial setup for input logic
 function setupSearchFunctionality(state) {
     const onSearch = () => {
-         // side effect loading indication
-         state.setActive('spinner');
 
-         if (!state.isValdInput()) {
-             state.alerts.fireMessage("Input er ikke gyldig", "warning", 1000);
-             return of(null);
-         }
+        // side effect loading indication
+        state.setActive('spinner');
 
-         const url = createUrl(state.getInputValue());
+        if (!state.isValdInput()) {
+            state.alerts.fireMessage("Input er ikke gyldig", "warning", 1000);
+            return of(null);
+        }
+
+        state.resetDisplayFields();
+
+        const url = createUrl(state.getInputValue());
+
+        const request = new XMLHttpRequest();
+        request.open('GET', url);
     
-         const request = new XMLHttpRequest();
-         request.open('GET', url);
-     
-         return of(request);
+        return of(request);
     }
 
     // Setup search key
