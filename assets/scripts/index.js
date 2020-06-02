@@ -18,9 +18,11 @@ function main() {
         display_elements: {
             mmsId: document.getElementById("mmsId"),
             currentTitle: document.getElementById("currentTitle"),
-            updatedHint: document.getElementById("updatedHint"),
             subTitle: document.getElementById("subTitle"),
-            previousTitles: document.getElementById("previousTitles"),
+            previousTitle: document.getElementById("previousTitle"),
+            previousTitleHint: document.getElementById("previousTitleHint"),
+            nextTitle: document.getElementById("nextTitle"),
+            nextTitleHint: document.getElementById("nextTitleHint"),
         },
 
         alerts: {
@@ -207,14 +209,26 @@ function injectRelevantFields(text, display_elements) {
 
     // Previous title
     {
-        // const element = findElementByAttribute(datafields, "tag", "780");
-        // const sub_fields = element.getElementsByTagName('subfield');
+        const element = findElementByAttribute(datafields, "tag", "780");
+        const sub_fields = element.getElementsByTagName('subfield');
 
-        // const pre_title = findElementByAttribute(sub_fields, "code", "a");
-        // display_elements.previousTitles.value = title.innerHTML;
+        const pre_title = findElementByAttribute(sub_fields, "code", "t");
+        display_elements.previousTitle.value = pre_title.innerHTML;
 
-        // const year = findElementByAttribute(sub_fields, "code", "g");
-        // display_elements.subTitle.value = sub_title.innerHTML;
+        const year = findElementByAttribute(sub_fields, "code", "g");
+        display_elements.previousTitleHint.innerHTML = `Endret: ${year.innerHTML}`;
+    }
+
+    // Next title
+    {
+        const element = findElementByAttribute(datafields, "tag", "785");
+        const sub_fields = element.getElementsByTagName('subfield');
+
+        const pre_title = findElementByAttribute(sub_fields, "code", "t");
+        display_elements.nextTitle.value = pre_title.innerHTML;
+
+        const year = findElementByAttribute(sub_fields, "code", "g");
+        display_elements.nextTitleHint.innerHTML = `Endret: ${year.innerHTML}`;
     }
 }
 
