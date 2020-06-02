@@ -15,6 +15,7 @@ function main() {
 
         display_elements: {
             mms_id:                 document.getElementById("mmsId"),
+            mms_clip:               document.getElementById("mmsClip"),
             current_title:          document.getElementById("currentTitle"),
             previous_title:         document.getElementById("previousTitle"),
             previous_title_hint:    document.getElementById("previousTitleHint"),
@@ -112,10 +113,37 @@ function main() {
         }
     }
 
+    fromEvent(state.display_elements.mms_clip, 'click').subscribe(
+        n => copyToClipboard(n, state)
+    );
 
     setupSearchFunctionality(state);
 }
 
+// Source: https://www.w3schools.com/howto/howto_js_copy_clipboard.asp
+function copyToClipboard(button, state) {
+    // Store selection if found
+    const selected = document.getSelection().rangeCount > 0 ? document.getSelection().getRangeAt(0) : false;
+    let element
+    switch (button.srcElement.id) {
+        case "mmsClip":
+            console.log(state.display_elements.mms_id);
+            element = state.display_elements.mms_id;
+            break;
+        default: 
+            console.error('unknown button id');
+            return;
+    }
+    element.select();
+    document.execCommand('copy');
+
+    state.alerts.fireMessage(`${element.value} kopiert!`, "warning", 600);    
+
+    if (selected) {                                 
+        document.getSelection().removeAllRanges();    
+        document.getSelection().addRange(selected); 
+    } 
+}
 
 
 /// Initial setup for input logic

@@ -72,23 +72,34 @@
             <div class="container">
                 <div class="form-group form-style">
                     <label for="mmsId">MMS ID</label>
-                    <input type="number" class="form-control" id="mmsId" disabled="disabled">
+                    <table style="width: 100%;">
+                        <tr>
+                            <th>
+                                <input type="number" class="form-control" id="mmsId" readonly>
+                            </th>
+                            <th>
+                                <button id="mmsClip" type="button" class="btn btn-primary">
+                                    Kopier
+                                </button>
+                            </th>
+                        </tr>
+                    </table>
                     <small id="mmsIdHelp" class="form-text text-muted">Intern ID</small>
                 </div>
             </div>
             <div class="container">
                 <div class="form-group form-style">
                     <label for="currentTitle">Tittel & undertittel</label>
-                    <textarea type="text" class="form-control title-field" id="currentTitle" disabled="disabled"></textarea>
+                    <textarea type="text" class="form-control title-field" id="currentTitle" readonly></textarea>
                 </div>
                 <div class="form-group form-style">
                     <label for="previousTitle">Tidligere tittel</label>
-                    <input class="form-control" id="previousTitle" disabled="disabled">
+                    <input class="form-control" id="previousTitle" readonly>
                     <small id="previousTitleHint" class="form-text text-muted"></small>
                 </div>
                 <div class="form-group form-style">
                     <label for="nextTitle">Etterfølgende tittel</label>
-                    <textarea class="form-control" id="nextTitle" disabled="disabled"></textarea>
+                    <textarea class="form-control" id="nextTitle" readonly></textarea>
                     <small id="nextTitleHint" class="form-text text-muted"></small>
                 </div>
             </div>

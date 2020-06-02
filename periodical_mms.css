@@ -12,7 +12,7 @@
 }
 
 .form-style {
-    max-width: 500px;
+    max-width: 600px;
 }
 
 .navbar-brand {
@@ -44,7 +44,6 @@
     animation-duration: 2s;
     animation-name: alert-hide;
 }
-
 
 /* override some bootstrap classes */
 .jumbotron {
