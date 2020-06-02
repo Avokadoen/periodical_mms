@@ -21,6 +21,10 @@
     margin: 0 10px 0 0;
 }
 
+.title-field {
+    min-height: 100px;
+}
+
 .search-btn-container {
     margin: 0;
 }
@@ -28,6 +32,19 @@
 .loading-indicator {
     padding: 8px 0 0 10px;
 }
+
+
+/* used by alerts to hide */
+@keyframes alert-hide {
+    from {filter: opacity(100%);}
+    to {filter: opacity(0);}
+}
+
+.alert-anim {
+    animation-duration: 2s;
+    animation-name: alert-hide;
+}
+
 
 /* override some bootstrap classes */
 .jumbotron {

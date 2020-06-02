@@ -1,7 +1,5 @@
-import { fromEvent, from, empty, of, Observable } from "rxjs";
-import { exhaustMap, delay, tap, catchError, flatMap } from "rxjs/operators"
-// Export Carousel to html
-import {CarouselEvent, CarouselEventHandler, CarouselOption} from 'bootstrap';
+import { fromEvent, of } from "rxjs";
+import { exhaustMap, catchError, filter, delay, flatMap } from "rxjs/operators"
 
 fromEvent(document, 'DOMContentLoaded').subscribe(main);
 
@@ -18,7 +16,6 @@ function main() {
         display_elements: {
             mms_id:                 document.getElementById("mmsId"),
             current_title:          document.getElementById("currentTitle"),
-            sub_title:              document.getElementById("subTitle"),
             previous_title:         document.getElementById("previousTitle"),
             previous_title_hint:    document.getElementById("previousTitleHint"),
             next_title:             document.getElementById("nextTitle"),
@@ -28,19 +25,46 @@ function main() {
         alerts: {
             warning: document.getElementById("alert-warning"),
             error: document.getElementById("alert-danger"),
+            placeholder: document.getElementById("alert-placeholder"),
 
-            fire_message: (message, type) => {
+            fireMessage: (message, type, duration) => {
                 let alert;
                 switch (type) {
                     case 'warning':
-                        alert = warning;
+                        alert = state.alerts.warning;
                         break;
                     case 'danger':
-                        alert = error;
+                        alert = state.alerts.error;
                         break;
+                    default:
+                        console.error(`Type was of unexpected type ${type}`);
+                        return;
                 }
-
-                alert.style.display = 'block'
+                
+                // This might cause memory leaks ... TO BAD
+                // TODO: This is wonky if you fire a new event before animation is done, consider locking alerts 
+                of(null).pipe(
+                    exhaustMap(() => {
+                        alert.innerHTML = message;
+                        state.alerts.placeholder.style.display = 'none';
+                        alert.style.display = 'block';
+                        alert.classList.remove('alert-anim');
+                        return of(null);
+                    }),
+                    delay(duration),
+                    flatMap(() => {
+                        alert.classList.add('alert-anim');
+                        return of(null);
+                    }),
+                    // delay until animation is done which is hardcoded 2000ms
+                    delay(2000), 
+                ).subscribe(
+                    () => {
+                        alert.innerHTML = "";
+                        state.alerts.placeholder.style.display = 'block';
+                        alert.style.display = 'none';
+                    }
+                );
             }
         },
 
@@ -58,7 +82,7 @@ function main() {
             return state.search_elements.input.value;
         },
 
-        set_active: (active) => {
+        setActive: (active) => {
             if (active === 'spinner') {
                 state.search_elements.spinner.style.display = 'block';
                 state.search_elements.button.style.display = 'none';
@@ -68,20 +92,19 @@ function main() {
             }
         },
 
-        reset_display_fields: () => {
+        resetDisplayFields: () => {
             state.display_elements.mms_id.value = "";
             state.display_elements.current_title.value = "";
-            state.display_elements.sub_title.value = "";
             state.display_elements.previous_title.value = "";
             state.display_elements.previous_title_hint.innerHTML = "";
             state.display_elements.next_title.value = "";
             state.display_elements.next_title_hint.innerHTML = "";
         },
 
-        import_display_fields: (source) => {
+        importDisplayFields: (source) => {
             state.display_elements.mms_id.value = source.mms_id;
-            state.display_elements.current_title.value = source.title;
-            state.display_elements.sub_title.value = source.sub_title;
+            const title_content = (source.sub_title) ? source.title + "\n" + source.sub_title : source.title;
+            state.display_elements.current_title.value = title_content;
             state.display_elements.previous_title.value = source.previous_title;
             state.display_elements.previous_title_hint.innerHTML = source.previous_title_hint;
             state.display_elements.next_title.value = source.next_title;
@@ -97,23 +120,38 @@ function main() {
 
 /// Initial setup for input logic
 function setupSearchFunctionality(state) {
+    const onSearch = () => {
+         // side effect loading indication
+         state.setActive('spinner');
+
+         if (!state.isValdInput()) {
+             state.alerts.fireMessage("Input er ikke gyldig", "warning", 1000);
+             return of(null);
+         }
+
+         const url = createUrl(state.getInputValue());
+    
+         const request = new XMLHttpRequest();
+         request.open('GET', url);
+     
+         return of(request);
+    }
+
+    // Setup search key
+    fromEvent(document, "keypress").pipe(
+        filter(k => k.key === "Enter"),
+        exhaustMap(onSearch),
+    ).subscribe(
+        req => {
+            // TODO: custom operator to avoid nested subscriptions
+            fetchAndHandleRequest(req, state)
+        }, 
+        console.error
+    )
+
     // Setup search button
     fromEvent(state.search_elements.button, "click").pipe(
-        exhaustMap(ev => {
-            // side effect loading indication
-            state.set_active('spinner');
-
-            if (!state.isValdInput()) {
-                return of(null);
-            }
-
-            const url = createUrl(state.getInputValue());
-       
-            const request = new XMLHttpRequest();
-            request.open('GET', url);
-        
-            return of(request);
-        }),
+        exhaustMap(onSearch),
     ).subscribe(
         req => {
             // TODO: custom operator to avoid nested subscriptions
@@ -144,33 +182,41 @@ function handleUserInput(event, state) {
 ///       suited for rxjs
 function fetchAndHandleRequest(req, state) {
     if (req === null) {
-        state.set_active('button');
+        state.setActive('button');
         return;
     }
 
     fromEvent(req, 'load').pipe(
-        catchError(err => state.set_active('button'))
+        catchError(err => state.setActive('button'))
     ).subscribe(e => {
-            if (Math.abs(req.status - 200) < 100) {
-                const record_data = parseXML(req.responseXML);
-                state.import_display_fields(record_data);
-            } else {
-                // TODO: alert error
-            }
-            
+        const went_wrong = () => {
+            state.alerts.fireMessage(`Noe gikk galt under søking av objekt med id ${state.search_elements.input.value} Status: ${req.status}`, "danger", 3000);
+        }
 
-            // side effect end loading indication
-            state.set_active('button');
+        let record_data = { status: -1 };
+        if (Math.abs(req.status - 200) < 100) {
+            record_data = parseXML(req.responseXML);
+            if (record_data.status === 0) {
+                state.importDisplayFields(record_data);
+            }
+        }
+
+        if (record_data.status < 0) {
+            went_wrong();
+        }
+
+        // side effect end loading indication
+        state.setActive('button');
         },
-        () => state.set_active('button')
+        () => state.setActive('button')
     );
 
     req.send();
 }
 
-// TODO: only retrieve field and insert into json
 // This way we can have seperate function to set display fields
 // so that we can reset them on search
+// TODO: this will silently fail in any state except expected state
 function parseXML(xmlDoc) {
     const findElementsByAttribute = (fields, attrib, value) => {
         let elements = [];
@@ -193,8 +239,13 @@ function parseXML(xmlDoc) {
         return "";
     }
 
-    
+    const numberOfRecords = xmlDoc.getElementsByTagName('numberOfRecords')[0].innerHTML;
+    if (numberOfRecords === "0") {
+        return { status: -1 };
+    }
+
     let record_data = {
+        status: 0,
         mms_id: "",
         title: "",
         sub_title: "",
@@ -203,7 +254,7 @@ function parseXML(xmlDoc) {
         next_title: "",
         next_title_hint: ""
     };
-    
+ 
     const datafields = xmlDoc.getElementsByTagName('datafield');
     // Retrieve mms id and insert to html
     {
@@ -215,7 +266,6 @@ function parseXML(xmlDoc) {
 
             if (institute.textContent.includes(target_institute)) {
                 const mmsIdElement = findElementByAttribute(sub_fields, "code", "6");
-                // TODO: emit error event if element is null
                 record_data.mms_id = mmsIdElement.innerHTML;
             }
         }
@@ -228,15 +278,12 @@ function parseXML(xmlDoc) {
 
         const title = findElementByAttribute(sub_fields, "code", "a");
         record_data.title = title.innerHTML ? title.innerHTML : "";
-        if (record_data.title.endsWith(' :')) {
-            record_data.title = record_data.title.slice(0, -2);
-        }
 
         let sub_title_b = findElementByAttribute(sub_fields, "code", "b");
         record_data.sub_title = sub_title_b.innerHTML ? sub_title_b.innerHTML : "";
 
         let sub_title_c = findElementByAttribute(sub_fields, "code", "c");
-        record_data.sub_title += (sub_title_c.innerHTML) ? sub_title_c.innerHTML + "&#13;&#10;" : "";
+        record_data.sub_title += (sub_title_c.innerHTML) ? sub_title_c.innerHTML + "\n" : "";
     }
 
     const retrieve_title_hist = (attr) => {
@@ -253,7 +300,7 @@ function parseXML(xmlDoc) {
         const sub_fields = element.getElementsByTagName('subfield');
 
         const pre_title = findElementByAttribute(sub_fields, "code", "t");
-        record_data.previous_title = pre_title.innerHTML;
+        record_data.previous_title = pre_title.innerHTML.replace("&amp;", "&");
 
         const year = findElementByAttribute(sub_fields, "code", "g");
         record_data.previous_title_hint = `Endret: ${year.innerHTML}`;
