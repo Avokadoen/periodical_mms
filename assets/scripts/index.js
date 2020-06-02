@@ -16,13 +16,13 @@ function main() {
         },
 
         display_elements: {
-            mmsId: document.getElementById("mmsId"),
-            currentTitle: document.getElementById("currentTitle"),
-            subTitle: document.getElementById("subTitle"),
-            previousTitle: document.getElementById("previousTitle"),
-            previousTitleHint: document.getElementById("previousTitleHint"),
-            nextTitle: document.getElementById("nextTitle"),
-            nextTitleHint: document.getElementById("nextTitleHint"),
+            mms_id:                 document.getElementById("mmsId"),
+            current_title:          document.getElementById("currentTitle"),
+            sub_title:              document.getElementById("subTitle"),
+            previous_title:         document.getElementById("previousTitle"),
+            previous_title_hint:    document.getElementById("previousTitleHint"),
+            next_title:             document.getElementById("nextTitle"),
+            next_title_hint:        document.getElementById("nextTitleHint"),
         },
 
         alerts: {
@@ -67,6 +67,26 @@ function main() {
                 state.search_elements.button.style.display = 'block';
             }
         },
+
+        reset_display_fields: () => {
+            state.display_elements.mms_id.value = "";
+            state.display_elements.current_title.value = "";
+            state.display_elements.sub_title.value = "";
+            state.display_elements.previous_title.value = "";
+            state.display_elements.previous_title_hint.innerHTML = "";
+            state.display_elements.next_title.value = "";
+            state.display_elements.next_title_hint.innerHTML = "";
+        },
+
+        import_display_fields: (source) => {
+            state.display_elements.mms_id.value = source.mms_id;
+            state.display_elements.current_title.value = source.title;
+            state.display_elements.sub_title.value = source.sub_title;
+            state.display_elements.previous_title.value = source.previous_title;
+            state.display_elements.previous_title_hint.innerHTML = source.previous_title_hint;
+            state.display_elements.next_title.value = source.next_title;
+            state.display_elements.next_title_hint.innerHTML = source.next_title_hint;
+        }
     }
 
 
@@ -132,7 +152,8 @@ function fetchAndHandleRequest(req, state) {
         catchError(err => state.set_active('button'))
     ).subscribe(e => {
             if (Math.abs(req.status - 200) < 100) {
-                injectRelevantFields(req.response, state.display_elements);
+                const record_data = parseXML(req.responseXML);
+                state.import_display_fields(record_data);
             } else {
                 // TODO: alert error
             }
@@ -150,11 +171,7 @@ function fetchAndHandleRequest(req, state) {
 // TODO: only retrieve field and insert into json
 // This way we can have seperate function to set display fields
 // so that we can reset them on search
-function injectRelevantFields(text, display_elements) {
-    const parser = new DOMParser();
-    console.log(text)
-    const xmlDoc = parser.parseFromString(text, "text/xml");
-
+function parseXML(xmlDoc) {
     const findElementsByAttribute = (fields, attrib, value) => {
         let elements = [];
         for (let field of fields) {
@@ -176,8 +193,18 @@ function injectRelevantFields(text, display_elements) {
         return "";
     }
 
-    const datafields = xmlDoc.getElementsByTagName('datafield');
     
+    let record_data = {
+        mms_id: "",
+        title: "",
+        sub_title: "",
+        previous_title: "",
+        previous_title_hint: "",
+        next_title: "",
+        next_title_hint: ""
+    };
+    
+    const datafields = xmlDoc.getElementsByTagName('datafield');
     // Retrieve mms id and insert to html
     {
         const target_institute = '47BIBSYS_NB';
@@ -189,7 +216,7 @@ function injectRelevantFields(text, display_elements) {
             if (institute.textContent.includes(target_institute)) {
                 const mmsIdElement = findElementByAttribute(sub_fields, "code", "6");
                 // TODO: emit error event if element is null
-                display_elements.mmsId.value = mmsIdElement.innerHTML;
+                record_data.mms_id = mmsIdElement.innerHTML;
             }
         }
     }
@@ -200,36 +227,55 @@ function injectRelevantFields(text, display_elements) {
         const sub_fields = element.getElementsByTagName('subfield');
 
         const title = findElementByAttribute(sub_fields, "code", "a");
-        display_elements.currentTitle.value = title.innerHTML ? title.innerHTML : "";
+        record_data.title = title.innerHTML ? title.innerHTML : "";
+        if (record_data.title.endsWith(' :')) {
+            record_data.title = record_data.title.slice(0, -2);
+        }
 
-        let sub_title = findElementByAttribute(sub_fields, "code", "b");
-        sub_title = (sub_title.length > 0) ? sub_title + "&#13;&#10;" : "";
-        display_elements.subTitle.value = sub_title.innerHTML ? sub_title.innerHTML : "";
+        let sub_title_b = findElementByAttribute(sub_fields, "code", "b");
+        record_data.sub_title = sub_title_b.innerHTML ? sub_title_b.innerHTML : "";
+
+        let sub_title_c = findElementByAttribute(sub_fields, "code", "c");
+        record_data.sub_title += (sub_title_c.innerHTML) ? sub_title_c.innerHTML + "&#13;&#10;" : "";
+    }
+
+    const retrieve_title_hist = (attr) => {
+        const rtr = {
+            title: "",
+            hint: "",
+        }
+
+        const element = findElementByAttribute(datafields, "tag", attr);
+        if (!element) {
+            return rtr;
+        }
+
+        const sub_fields = element.getElementsByTagName('subfield');
+
+        const pre_title = findElementByAttribute(sub_fields, "code", "t");
+        record_data.previous_title = pre_title.innerHTML;
+
+        const year = findElementByAttribute(sub_fields, "code", "g");
+        record_data.previous_title_hint = `Endret: ${year.innerHTML}`;
+
+        return rtr;
     }
 
     // Previous title
     {
-        const element = findElementByAttribute(datafields, "tag", "780");
-        const sub_fields = element.getElementsByTagName('subfield');
-
-        const pre_title = findElementByAttribute(sub_fields, "code", "t");
-        display_elements.previousTitle.value = pre_title.innerHTML;
-
-        const year = findElementByAttribute(sub_fields, "code", "g");
-        display_elements.previousTitleHint.innerHTML = `Endret: ${year.innerHTML}`;
+        const prev_title = retrieve_title_hist("780");
+        record_data.previous_title = prev_title.title;
+        record_data.previous_title_hint = prev_title.hint;
     }
 
     // Next title
     {
-        const element = findElementByAttribute(datafields, "tag", "785");
-        const sub_fields = element.getElementsByTagName('subfield');
-
-        const pre_title = findElementByAttribute(sub_fields, "code", "t");
-        display_elements.nextTitle.value = pre_title.innerHTML;
-
-        const year = findElementByAttribute(sub_fields, "code", "g");
-        display_elements.nextTitleHint.innerHTML = `Endret: ${year.innerHTML}`;
+        const next_title = retrieve_title_hist("785");
+        record_data.next_title = next_title.title;
+        record_data.next_title_hint = next_title.hint;
     }
+
+    return record_data;
 }
 
 
