@@ -1,5 +1,7 @@
 import { fromEvent, from, empty, of, Observable } from "rxjs";
 import { exhaustMap, delay, tap, catchError, flatMap } from "rxjs/operators"
+// Export Carousel to html
+import {CarouselEvent, CarouselEventHandler, CarouselOption} from 'bootstrap';
 
 fromEvent(document, 'DOMContentLoaded').subscribe(main);
 
@@ -16,8 +18,28 @@ function main() {
         display_elements: {
             mmsId: document.getElementById("mmsId"),
             currentTitle: document.getElementById("currentTitle"),
+            updatedHint: document.getElementById("updatedHint"),
             subTitle: document.getElementById("subTitle"),
             previousTitles: document.getElementById("previousTitles"),
+        },
+
+        alerts: {
+            warning: document.getElementById("alert-warning"),
+            error: document.getElementById("alert-danger"),
+
+            fire_message: (message, type) => {
+                let alert;
+                switch (type) {
+                    case 'warning':
+                        alert = warning;
+                        break;
+                    case 'danger':
+                        alert = error;
+                        break;
+                }
+
+                alert.style.display = 'block'
+            }
         },
 
         /// Check if id is valid for search
@@ -42,8 +64,9 @@ function main() {
                 state.search_elements.spinner.style.display = 'none';
                 state.search_elements.button.style.display = 'block';
             }
-        }
+        },
     }
+
 
     setupSearchFunctionality(state);
 }
@@ -62,7 +85,12 @@ function setupSearchFunctionality(state) {
                 return of(null);
             }
 
-            return initRequest(state.getInputValue());
+            const url = createUrl(state.getInputValue());
+       
+            const request = new XMLHttpRequest();
+            request.open('GET', url);
+        
+            return of(request);
         }),
     ).subscribe(
         req => {
@@ -93,9 +121,20 @@ function handleUserInput(event, state) {
 /// NOTE: this will cause subscribe pyramid as XMLHttpRequest API is not well
 ///       suited for rxjs
 function fetchAndHandleRequest(req, state) {
-    fromEvent(req, 'load').subscribe(e => {
-            console.log(req); // TODO: send to function instead
-            injectRelevantFields(req.response, state.display_elements);
+    if (req === null) {
+        state.set_active('button');
+        return;
+    }
+
+    fromEvent(req, 'load').pipe(
+        catchError(err => state.set_active('button'))
+    ).subscribe(e => {
+            if (Math.abs(req.status - 200) < 100) {
+                injectRelevantFields(req.response, state.display_elements);
+            } else {
+                // TODO: alert error
+            }
+            
 
             // side effect end loading indication
             state.set_active('button');
@@ -107,6 +146,8 @@ function fetchAndHandleRequest(req, state) {
 }
 
 // TODO: only retrieve field and insert into json
+// This way we can have seperate function to set display fields
+// so that we can reset them on search
 function injectRelevantFields(text, display_elements) {
     const parser = new DOMParser();
     console.log(text)
@@ -159,7 +200,8 @@ function injectRelevantFields(text, display_elements) {
         const title = findElementByAttribute(sub_fields, "code", "a");
         display_elements.currentTitle.value = title.innerHTML ? title.innerHTML : "";
 
-        const sub_title = findElementByAttribute(sub_fields, "code", "b");
+        let sub_title = findElementByAttribute(sub_fields, "code", "b");
+        sub_title = (sub_title.length > 0) ? sub_title + "&#13;&#10;" : "";
         display_elements.subTitle.value = sub_title.innerHTML ? sub_title.innerHTML : "";
     }
 
@@ -174,15 +216,6 @@ function injectRelevantFields(text, display_elements) {
         // const year = findElementByAttribute(sub_fields, "code", "g");
         // display_elements.subTitle.value = sub_title.innerHTML;
     }
-}
-
-function initRequest(id) {
-    const url = createUrl(id);
-       
-    const request = new XMLHttpRequest();
-    request.open('GET', url);
-
-    return of(request);
 }
 
 
