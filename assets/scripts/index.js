@@ -1,4 +1,4 @@
-import { fromEvent, of } from "rxjs";
+import { fromEvent, of, merge } from "rxjs";
 import { exhaustMap, catchError, filter, delay, flatMap } from "rxjs/operators"
 
 fromEvent(document, 'DOMContentLoaded').subscribe(main);
@@ -107,6 +107,7 @@ function main() {
             // move object number inside display
             state.display_elements.object_number.value = state.search_elements.input.value;
             state.search_elements.input.value = "";
+            state.handleUserInput();
 
             state.display_elements.mms_id.value = source.mms_id;
             const title_content = (source.sub_title) ? source.title + "\n" + source.sub_title : source.title;
@@ -115,6 +116,14 @@ function main() {
             state.display_elements.previous_title_hint.innerHTML = source.previous_title_hint;
             state.display_elements.next_title.value = source.next_title;
             state.display_elements.next_title_hint.innerHTML = source.next_title_hint;
+        },
+
+        handleUserInput: () => {
+            if (state.getInputValue().length > 17) {
+                state.search_elements.input.value = state.getInputValue().slice(0, -1);
+            } 
+        
+            state.search_elements.hint.innerHTML = state.getInputValue().length + "/17";
         }
     }
 
@@ -201,21 +210,13 @@ function setupSearchFunctionality(state) {
         console.error
     );
 
+    // TODO: on programatic change to avoid having to call handleUserInput manually
     // Incase browser has cached value in input field
-    handleUserInput("", state);
-
-    fromEvent(state.search_elements.input, "input").subscribe(
-        event => handleUserInput(event, state)
+    state.handleUserInput();
+    const onInput = fromEvent(state.search_elements.input, "input");
+    merge(onInput).subscribe(
+        () => state.handleUserInput()
     );
-}
-
-/// Handles user input event
-function handleUserInput(event, state) {
-    if (state.getInputValue().length > 17) {
-        state.search_elements.input.value = state.getInputValue().slice(0, -1);
-    } 
-
-    state.search_elements.hint.innerHTML = state.getInputValue().length + "/17";
 }
 
 /// Attempts to fetch xml from sru using an opened XMLHttpRequest request
