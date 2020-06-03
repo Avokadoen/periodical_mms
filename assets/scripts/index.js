@@ -14,6 +14,7 @@ function main() {
         },
 
         display_elements: {
+            object_number:          document.getElementById("objectNumber"),
             mms_id:                 document.getElementById("mmsId"),
             mms_clip:               document.getElementById("mmsClip"),
             current_title:          document.getElementById("currentTitle"),
@@ -103,6 +104,10 @@ function main() {
         },
 
         importDisplayFields: (source) => {
+            // move object number inside display
+            state.display_elements.object_number.value = state.search_elements.input.value;
+            state.search_elements.input.value = "";
+
             state.display_elements.mms_id.value = source.mms_id;
             const title_content = (source.sub_title) ? source.title + "\n" + source.sub_title : source.title;
             state.display_elements.current_title.value = title_content;
