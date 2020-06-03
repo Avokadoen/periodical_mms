@@ -95,6 +95,7 @@ function main() {
         },
 
         resetDisplayFields: () => {
+            state.display_elements.object_number.value = "";
             state.display_elements.mms_id.value = "";
             state.display_elements.current_title.value = "";
             state.display_elements.previous_title.value = "";
