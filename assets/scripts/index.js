@@ -134,6 +134,11 @@ function copyToClipboard(button, state) {
             console.error('unknown button id');
             return;
     }
+    if (element.value < 0) {
+        state.alerts.fireMessage(`Kan ikke kopiere tomt felt`, "warning", 600);
+        return; 
+    }
+
     element.select();
     document.execCommand('copy');
 
@@ -218,8 +223,9 @@ function fetchAndHandleRequest(req, state) {
     }
 
     fromEvent(req, 'load').pipe(
-        catchError(err => state.setActive('button'))
-    ).subscribe(e => {
+        catchError(() => state.setActive('button'))
+    ).subscribe(
+    () => {
         const went_wrong = () => {
             state.alerts.fireMessage(`Noe gikk galt under søking av objekt med id ${state.search_elements.input.value} Status: ${req.status}`, "danger", 3000);
         }
@@ -238,7 +244,7 @@ function fetchAndHandleRequest(req, state) {
 
         // side effect end loading indication
         state.setActive('button');
-        },
+    },
         () => state.setActive('button')
     );
 
@@ -329,12 +335,11 @@ function parseXML(xmlDoc) {
         }
 
         const sub_fields = element.getElementsByTagName('subfield');
-
         const pre_title = findElementByAttribute(sub_fields, "code", "t");
-        record_data.previous_title = pre_title.innerHTML.replace("&amp;", "&");
+        rtr.title = pre_title.innerHTML.replace("&amp;", "&");
 
         const year = findElementByAttribute(sub_fields, "code", "g");
-        record_data.previous_title_hint = `Endret: ${year.innerHTML}`;
+        rtr.hint = `Endret: ${year.innerHTML}`;
 
         return rtr;
     }
